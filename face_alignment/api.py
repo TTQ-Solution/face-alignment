@@ -49,7 +49,7 @@ models_urls = {
 
 
 class FaceAlignment:
-    def __init__(self, landmarks_type, network_size=NetworkSize.LARGE,
+    def __init__(self, model_path, landmarks_type=LandmarksType._2D, network_size=NetworkSize.LARGE,
                  device='cuda', flip_input=False, face_detector='sfd', face_detector_kwargs=None, verbose=False):
         self.device = device
         self.flip_input = flip_input
@@ -77,12 +77,15 @@ class FaceAlignment:
         self.face_detector = face_detector_module.FaceDetector(device=device, verbose=verbose, **face_detector_kwargs)
 
         # Initialise the face alignemnt networks
-        if landmarks_type == LandmarksType._2D:
-            network_name = '2DFAN-' + str(network_size)
+        if model_path:
+            self.face_alignment_net = torch.jit.load(model_path)
         else:
-            network_name = '3DFAN-' + str(network_size)
-        self.face_alignment_net = torch.jit.load(
-            load_file_from_url(models_urls.get(pytorch_version, default_model_urls)[network_name]))
+            if landmarks_type == LandmarksType._2D:
+                network_name = '2DFAN-' + str(network_size)
+            else:
+                network_name = '3DFAN-' + str(network_size)
+            self.face_alignment_net = torch.jit.load(
+                load_file_from_url(models_urls.get(pytorch_version, default_model_urls)[network_name]))
 
         self.face_alignment_net.to(device)
         self.face_alignment_net.eval()
